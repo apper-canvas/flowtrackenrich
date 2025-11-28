@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { toast } from "react-toastify"
-import TaskForm from "@/components/organisms/TaskForm"
-import TaskList from "@/components/organisms/TaskList"
-import FilterControls from "@/components/molecules/FilterControls"
-import SortControls from "@/components/molecules/SortControls"
-import CompletionAnimation from "@/components/organisms/CompletionAnimation"
-import Empty from "@/components/ui/Empty"
-import { taskService } from "@/services/api/taskService"
-import ApperIcon from "@/components/ApperIcon"
+import React, { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { toast } from "react-toastify";
+import { taskService } from "@/services/api/taskService";
+import ApperIcon from "@/components/ApperIcon";
+import Loading from "@/components/ui/Loading";
+import Empty from "@/components/ui/Empty";
+import TaskForm from "@/components/organisms/TaskForm";
+import CompletionAnimation from "@/components/organisms/CompletionAnimation";
+import TaskList from "@/components/organisms/TaskList";
+import FilterControls from "@/components/molecules/FilterControls";
+import SortControls from "@/components/molecules/SortControls";
 
 const TaskFlow = () => {
   const [tasks, setTasks] = useState([])
@@ -34,30 +35,29 @@ const TaskFlow = () => {
 
   useEffect(() => {
     loadTasks()
-  }, [])
+}, [])
 
   const handleAddTask = async (taskData) => {
     try {
       const newTask = await taskService.create(taskData)
-      setTasks(prev => [newTask, ...prev])
-      toast.success("Task added successfully!")
+      if (newTask) {
+        setTasks(prev => [newTask, ...prev])
+        toast.success("Task added successfully!")
+      }
     } catch (err) {
       toast.error("Failed to add task")
       console.error("Error adding task:", err)
     }
   }
-
   const handleUpdateTask = async (id, updates) => {
-    try {
+try {
       const updatedTask = await taskService.update(id, updates)
-      setTasks(prev => prev.map(task => task.Id === id ? updatedTask : task))
+      setTasks(prev => prev.map(task => task.id === id ? updatedTask : task))
       
       if (updates.status === "completed") {
         setShowCompletion(true)
-        setTimeout(() => setShowCompletion(false), 1000)
+setTimeout(() => setShowCompletion(false), 1000)
         toast.success("Task completed! Great job! 🎉")
-      } else {
-        toast.success("Task updated successfully!")
       }
     } catch (err) {
       toast.error("Failed to update task")
@@ -66,9 +66,9 @@ const TaskFlow = () => {
   }
 
   const handleDeleteTask = async (id) => {
-    try {
+try {
       await taskService.delete(id)
-      setTasks(prev => prev.filter(task => task.Id !== id))
+      setTasks(prev => prev.filter(task => task.id !== id))
       toast.success("Task deleted successfully")
     } catch (err) {
       toast.error("Failed to delete task")
@@ -79,32 +79,31 @@ const TaskFlow = () => {
   const filteredAndSortedTasks = () => {
     let filtered = tasks
 
-    // Apply filter
+// Apply filter
     if (filter === "active") {
-      filtered = tasks.filter(task => task.status === "active")
+      filtered = tasks.filter(task => task.status_c === "active")
     } else if (filter === "completed") {
-      filtered = tasks.filter(task => task.status === "completed")
+      filtered = tasks.filter(task => task.status_c === "completed")
     }
 
-    // Apply sort
+// Apply sort
     return filtered.sort((a, b) => {
       if (sortBy === "priority") {
         const priorityOrder = { high: 3, medium: 2, low: 1 }
-        return priorityOrder[b.priority] - priorityOrder[a.priority]
+        return priorityOrder[b.priority_c] - priorityOrder[a.priority_c]
       } else if (sortBy === "created") {
-        return new Date(b.createdAt) - new Date(a.createdAt)
+        return new Date(b.CreatedOn) - new Date(a.CreatedOn)
       }
       return 0
     })
   }
 
   const displayTasks = filteredAndSortedTasks()
-  const taskStats = {
+const taskStats = {
     total: tasks.length,
-    active: tasks.filter(t => t.status === "active").length,
-    completed: tasks.filter(t => t.status === "completed").length,
+    active: tasks.filter(t => t.status_c === "active").length,
+    completed: tasks.filter(t => t.status_c === "completed").length,
   }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -178,7 +177,7 @@ const TaskFlow = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-            >
+>
               <div className="text-center">
                 <div className="text-2xl font-bold text-slate-700">{taskStats.total}</div>
                 <div className="text-sm text-slate-500">Total</div>

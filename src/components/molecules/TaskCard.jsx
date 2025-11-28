@@ -11,29 +11,28 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
   const [editDescription, setEditDescription] = useState(task.description || "")
 
   const handleToggleComplete = () => {
-    onUpdate(task.Id, {
-      status: task.status === "completed" ? "active" : "completed",
-      completedAt: task.status === "completed" ? null : new Date().toISOString()
+onUpdate(task.Id, {
+      status_c: task.status_c === "completed" ? "active" : "completed"
     })
   }
 
   const handleSaveEdit = () => {
     if (!editTitle.trim()) return
     
-    onUpdate(task.Id, {
-      title: editTitle.trim(),
-      description: editDescription.trim()
+onUpdate(task.Id, {
+      title_c: editTitle.trim(),
+      description_c: editDescription.trim()
     })
     setIsEditing(false)
   }
 
   const handleCancelEdit = () => {
-    setEditTitle(task.title)
-    setEditDescription(task.description || "")
+setEditTitle(task.title_c)
+    setEditDescription(task.description_c || "")
     setIsEditing(false)
   }
 
-  const getPriorityColor = (priority) => {
+const getPriorityColor = (priority) => {
     switch (priority) {
       case "high": return "high"
       case "medium": return "medium"
@@ -42,7 +41,7 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
     }
   }
 
-  const isCompleted = task.status === "completed"
+const isCompleted = task.status_c === "completed"
 
   return (
     <motion.div
@@ -54,7 +53,7 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
       className={cn(
         "bg-white rounded-xl border border-slate-200 p-6 space-y-4 transition-all duration-200",
         "hover:shadow-lg hover:shadow-slate-200/50",
-        isCompleted && "opacity-75 bg-slate-50"
+isCompleted && "opacity-75 bg-slate-50"
       )}
     >
       <div className="flex items-start justify-between">
@@ -114,14 +113,14 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
                   "text-lg font-semibold text-slate-900 leading-tight",
                   isCompleted && "line-through text-slate-500"
                 )}>
-                  {task.title}
+{task.title_c}
                 </h3>
-                {task.description && (
+{task.description_c && (
                   <p className={cn(
                     "text-slate-600 text-sm leading-relaxed",
                     isCompleted && "line-through text-slate-400"
                   )}>
-                    {task.description}
+{task.description_c}
                   </p>
                 )}
               </>
@@ -129,17 +128,17 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
           </div>
         </div>
         
-        <Badge variant={getPriorityColor(task.priority)}>
-          {task.priority}
+<Badge variant={getPriorityColor(task.priority_c)}>
+          {task.priority_c}
         </Badge>
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         <div className="text-xs text-slate-500 space-y-1">
-          <div>Created {format(new Date(task.createdAt), "MMM dd, yyyy")}</div>
-          {isCompleted && task.completedAt && (
+<div>Created {format(new Date(task.CreatedOn), "MMM dd, yyyy")}</div>
+          {isCompleted && task.ModifiedOn && (
             <div className="text-success-600">
-              Completed {format(new Date(task.completedAt), "MMM dd, yyyy")}
+              Completed {format(new Date(task.ModifiedOn), "MMM dd, yyyy")}
             </div>
           )}
         </div>
@@ -155,7 +154,7 @@ const TaskCard = ({ task, onUpdate, onDelete }) => {
               <ApperIcon name="Edit2" className="w-4 h-4" />
             </motion.button>
             <motion.button
-              onClick={() => onDelete(task.Id)}
+onClick={() => onDelete(task.Id)}
               className="p-2 text-slate-400 hover:text-error-500 transition-colors duration-200"
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
