@@ -77,7 +77,7 @@ export const taskService = {
     }
   },
 
-  async create(taskData) {
+async create(taskData) {
     try {
       const apperClient = getApperClient()
       if (!apperClient) {
@@ -107,12 +107,14 @@ export const taskService = {
         const failed = response.results.filter(r => !r.success)
 
         if (failed.length > 0) {
-          console.error(`Failed to create ${failed.length} records:`, failed)
+          console.error(`Failed to create ${failed.length} records: ${JSON.stringify(failed)}`)
           failed.forEach(record => {
             record.errors?.forEach(error => toast.error(`${error.fieldLabel}: ${error}`))
             if (record.message) toast.error(record.message)
           })
         }
+
+        // Return the created task data for potential file attachment
         return successful.length > 0 ? successful[0].data : null
       }
     } catch (error) {

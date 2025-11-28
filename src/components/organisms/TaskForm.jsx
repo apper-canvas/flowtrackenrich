@@ -1,15 +1,18 @@
-import { useState } from "react"
-import { motion } from "framer-motion"
-import Button from "@/components/atoms/Button"
-import Input from "@/components/atoms/Input"
-import Select from "@/components/atoms/Select"
-import Textarea from "@/components/atoms/Textarea"
-import ApperIcon from "@/components/ApperIcon"
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import ApperFileFieldComponent from "@/components/atoms/FileUploader/ApperFileFieldComponent";
+import { fileService } from "@/services/api/fileService";
+import ApperIcon from "@/components/ApperIcon";
+import Textarea from "@/components/atoms/Textarea";
+import Select from "@/components/atoms/Select";
+import Button from "@/components/atoms/Button";
+import Input from "@/components/atoms/Input";
 
 const TaskForm = ({ onAddTask }) => {
-  const [title, setTitle] = useState("")
+const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState("medium")
+  const [uploadedFiles, setUploadedFiles] = useState([])
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -23,6 +26,17 @@ const TaskForm = ({ onAddTask }) => {
     return newErrors
   }
 
+const getFiles = async (fieldKey) => {
+    try {
+      if (!window.ApperSDK) return []
+      const { ApperFileUploader } = window.ApperSDK
+      return await ApperFileUploader.FileField.getFiles(fieldKey)
+    } catch (error) {
+      console.error("Error getting files:", error)
+      return uploadedFiles
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     
@@ -34,25 +48,46 @@ const TaskForm = ({ onAddTask }) => {
     setIsSubmitting(true)
     
     try {
-      await onAddTask({
-title_c: title.trim(),
+      // 1. Retrieve files using SDK method
+      const files = await getFiles('file_data_c')
+      
+      // 2. Create the task first
+      const taskData = {
+        title_c: title.trim(),
         description_c: description.trim(),
         priority_c: priority,
-        status_c: "active"
-      })
+        status_c: "active",
+        file_data_c: files || uploadedFiles
+      }
+
+      const createdTask = await onAddTask(taskData)
+      
+      // 3. If files were attached and task was created, create file records
+      if ((files?.length > 0 || uploadedFiles?.length > 0) && createdTask?.Id) {
+        await fileService.create({
+          file_data_c: files || uploadedFiles,
+          description_c: `Files for task: ${title.trim()}`
+        }, createdTask.Id)
+      }
       
       // Reset form
       setTitle("")
       setDescription("")
       setPriority("medium")
+      setUploadedFiles([])
       setErrors({})
+      
+      // Clear file uploader
+      if (window.ApperSDK) {
+        const { ApperFileUploader } = window.ApperSDK
+        ApperFileUploader.FileField.clearField('file_data_c')
+      }
     } catch (error) {
       console.error("Error adding task:", error)
     } finally {
       setIsSubmitting(false)
     }
   }
-
   const getPriorityIcon = (priority) => {
     switch (priority) {
       case "high": return "AlertTriangle"
@@ -144,6 +179,32 @@ title_c: title.trim(),
                 />
               </div>
             </div>
+</div>
+
+          {/* File Upload Section */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700">
+              Attach Files (Optional)
+            </label>
+            <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
+              <ApperFileFieldComponent
+                elementId="file_data_c"
+                config={{
+                  fieldKey: 'file_data_c',
+                  fieldName: 'file_data_c',
+                  tableName: 'file_c',
+                  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+                  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY,
+                  existingFiles: uploadedFiles,
+                  fileCount: uploadedFiles.length
+                }}
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              You can attach up to 5 files to this task
+<p className="text-xs text-slate-500">
+              You can attach up to 5 files to this task
+            </p>
           </div>
 
           <div className="flex justify-end pt-4">
