@@ -13,6 +13,7 @@ const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [priority, setPriority] = useState("medium")
   const [uploadedFiles, setUploadedFiles] = useState([])
+  const [uploadedImages, setUploadedImages] = useState([])
   const [errors, setErrors] = useState({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -37,7 +38,7 @@ const getFiles = async (fieldKey) => {
     }
   }
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault()
     
     const formErrors = validateForm()
@@ -50,6 +51,7 @@ const getFiles = async (fieldKey) => {
     try {
       // 1. Retrieve files using SDK method
       const files = await getFiles('file_data_c')
+      const images = await getFiles('image_data_c')
       
       // 2. Create the task first
       const taskData = {
@@ -70,17 +72,27 @@ const getFiles = async (fieldKey) => {
         }, createdTask.Id)
       }
       
+      // 4. If images were attached and task was created, create separate image records
+      if ((images?.length > 0 || uploadedImages?.length > 0) && createdTask?.Id) {
+        await fileService.create({
+          file_data_c: images || uploadedImages,
+          description_c: `Images for task: ${title.trim()}`
+        }, createdTask.Id)
+      }
+      
       // Reset form
       setTitle("")
       setDescription("")
       setPriority("medium")
       setUploadedFiles([])
+      setUploadedImages([])
       setErrors({})
       
-      // Clear file uploader
+      // Clear file uploaders
       if (window.ApperSDK) {
         const { ApperFileUploader } = window.ApperSDK
         ApperFileUploader.FileField.clearField('file_data_c')
+        ApperFileUploader.FileField.clearField('image_data_c')
       }
     } catch (error) {
       console.error("Error adding task:", error)
@@ -182,7 +194,7 @@ const getFiles = async (fieldKey) => {
 </div>
 
           {/* File Upload Section */}
-          <div className="space-y-2">
+<div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">
               Attach Files (Optional)
             </label>
@@ -200,8 +212,33 @@ const getFiles = async (fieldKey) => {
                 }}
               />
             </div>
-<p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500">
               You can attach up to 5 files to this task
+            </p>
+          </div>
+
+          {/* Images Section */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-700 flex items-center space-x-2">
+              <ApperIcon name="Image" className="w-4 h-4" />
+              <span>Add Images (Optional)</span>
+            </label>
+            <div className="border border-blue-200 rounded-lg p-4 bg-blue-50">
+              <ApperFileFieldComponent
+                elementId="image_data_c"
+                config={{
+                  fieldKey: 'image_data_c',
+                  fieldName: 'image_data_c',
+                  tableName: 'file_c',
+                  apperProjectId: import.meta.env.VITE_APPER_PROJECT_ID,
+                  apperPublicKey: import.meta.env.VITE_APPER_PUBLIC_KEY,
+                  existingFiles: uploadedImages,
+                  fileCount: uploadedImages.length
+                }}
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              Upload images related to this task (JPG, PNG, GIF supported)
             </p>
           </div>
 
