@@ -200,8 +200,6 @@ const getFiles = async (fieldKey) => {
                 }}
               />
             </div>
-            <p className="text-xs text-slate-500">
-              You can attach up to 5 files to this task
 <p className="text-xs text-slate-500">
               You can attach up to 5 files to this task
             </p>
